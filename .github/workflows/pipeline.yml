@@ -3,8 +3,7 @@ name: Pipeline
 on: [push, workflow_dispatch]
 
 env:
-  SERVICE_NAME: linting-and-unit-testing
-  IMAGE_NAME: ghcr.io/thexon7/linting-and-unit-testing
+  SERVICE_NAME: mascot-api
 
 jobs:
   lint-and-test:
@@ -54,9 +53,9 @@ jobs:
         with:
           images: ${{ env.IMAGE_NAME }}
           tags: |
-            type=sha,format=short
-            type=sha,format=long
-            type=ref,event=branch
+            type=sha,format=short,prefix=,suffix=
+            type=sha,format=long,prefix=,suffix=
+            type=ref,event=branch,prefix=,suffix=
 
       - name: Build and push the container image
         uses: docker/build-push-action@v6
@@ -89,9 +88,8 @@ jobs:
         run: |
           docker run \
             --rm --detach --publish 8080:8080 \
-            --name $SERVICE_NAME \
-            $IMAGE_NAME:${{ github.sha }}
-          sleep 3
+            --name $SERVICE_NAME $IMAGE_NAME:${{ github.sha }}
+          sleep 3 # allow some time for the service to start
 
       - name: Run tests using the container image
         run: |
@@ -99,6 +97,7 @@ jobs:
             curl --silent --show-error --fail localhost:8080/health
           docker exec $SERVICE_NAME \
             curl --silent --show-error --fail localhost:8080/05024756-765e-41a9-89d7-1407436d9a58
+
 
       - name: Stop ${{ env.SERVICE_NAME }}
         run: docker stop $SERVICE_NAME
